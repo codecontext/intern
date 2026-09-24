@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Intern</title>
+
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- Header -->
+    <header class="header">
+
+        <div class="brand">
+            <div class="brand-name">Intern</div>
+            <div class="brand-subtitle">
+                Context-aware knowledge assistant
+            </div>
+        </div>
+
+        <div class="model-selector">
+
+            <label for="model">
+                Model
+            </label>
+
+            <select id="model">
+                <option value="">Loading...</option>
+            </select>
+
+        </div>
+
+    </header>
+
+
+    <!-- Chat -->
+    <main id="chat" class="chat">
+
+        <div class="welcome">
+
+            <div class="welcome-title">
+                How can I help?
+            </div>
+
+            <div class="welcome-text">
+                Ask me anything or start working with your knowledge base.
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!-- Input -->
+    <footer class="input-area">
+
+        <div class="input-container">
+
+            <textarea
+                id="message"
+                placeholder="Message Intern..."
+                rows="1"
+            ></textarea>
+
+            <button id="send" title="Send message">
+                <span>Send</span>
+                <span class="send-icon">➤</span>
+            </button>
+
+        </div>
+
+        <div class="input-hint">
+            Press Enter to send · Shift + Enter for a new line
+        </div>
+
+    </footer>
+
+</div>
+
+
+<script src="/static/app.js"></script>
+
+</body>
+</html>
