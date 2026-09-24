@@ -7,7 +7,12 @@ name = "intern"
 version = "0.1.0"
 description = "Context-aware knowledge assistant"
 requires-python = ">=3.11"
-dependencies = []
+
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "ollama>=0.4",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
