@@ -3,7 +3,25 @@ const messageInput = document.getElementById("message");
 const sendButton = document.getElementById("send");
 const chat = document.getElementById("chat");
 
-let messages = [];
+let conversationId = null;
+
+
+/* ---------------------------------------------------------
+   Create backend conversation
+--------------------------------------------------------- */
+
+async function createConversation() {
+    const response = await fetch("/api/conversations", {
+        method: "POST"
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to create conversation");
+    }
+
+    const data = await response.json();
+    conversationId = data.conversation_id;
+}
 
 
 /* ---------------------------------------------------------
@@ -135,7 +153,7 @@ async function sendMessage() {
     const content = messageInput.value.trim();
     const model = modelSelect.value;
 
-    if (!content || !model) {
+    if (!content || !model || !conversationId) {
         return;
     }
 
@@ -148,12 +166,6 @@ async function sendMessage() {
 
 
     addMessage("user", content);
-
-
-    messages.push({
-        role: "user",
-        content: content
-    });
 
 
     messageInput.value = "";
@@ -169,7 +181,7 @@ async function sendMessage() {
     try {
 
         const response = await fetch(
-            `/api/chat?model=${encodeURIComponent(model)}`,
+            `/api/conversations/${encodeURIComponent(conversationId)}/messages`,
             {
                 method: "POST",
 
@@ -177,7 +189,10 @@ async function sendMessage() {
                     "Content-Type": "application/json"
                 },
 
-                body: JSON.stringify(messages)
+                body: JSON.stringify({
+                    model: model,
+                    message: content
+                })
             }
         );
 
@@ -194,12 +209,6 @@ async function sendMessage() {
             "assistant",
             data.response
         );
-
-
-        messages.push({
-            role: "assistant",
-            content: data.response
-        });
 
 
     } catch (error) {
@@ -277,4 +286,13 @@ messageInput.addEventListener(
    Startup
 --------------------------------------------------------- */
 
-loadModels();
+Promise.all([
+    loadModels(),
+    createConversation()
+]).catch((error) => {
+    console.error(error);
+    addMessage(
+        "assistant",
+        "Sorry, a conversation could not be started."
+    );
+});
