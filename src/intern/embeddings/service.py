@@ -44,3 +44,20 @@ class EmbeddingService:
             )
             for chunk, vector in zip(chunks, vectors)
         ]
+
+    def embed_text(self, model: str, text: str) -> tuple[float, ...]:
+        """Generate one embedding vector for a query or other text."""
+        if not model.strip():
+            raise EmbeddingError("Embedding model must not be empty")
+
+        if not text.strip():
+            raise EmbeddingError("Text to embed must not be empty")
+
+        vectors = self._provider.embed(model=model, texts=[text])
+
+        if len(vectors) != 1:
+            raise EmbeddingError(
+                "Embedding provider must return one vector for one text"
+            )
+
+        return tuple(vectors[0])
