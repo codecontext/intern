@@ -75,6 +75,8 @@ body {
     border-bottom: 1px solid var(--border);
 
     box-shadow: var(--shadow);
+
+    gap: 20px;
 }
 
 
@@ -161,6 +163,239 @@ body {
 
 
 /* ---------------------------------------------------------
+   Knowledge base panel
+--------------------------------------------------------- */
+
+.knowledge-base-switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted-text);
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+
+.knowledge-base-switch > span:first-child {
+    min-width: 124px;
+}
+
+
+.knowledge-base-switch > span:last-child {
+    display: inline-block;
+    width: 24px;
+    text-align: left;
+}
+
+
+.header-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-left: auto;
+}
+
+
+.knowledge-base-switch input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+
+.switch-track {
+    width: 34px;
+    height: 20px;
+    position: relative;
+    border-radius: 999px;
+    background: #cbd5e1;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+
+.switch-track::after {
+    width: 16px;
+    height: 16px;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    border-radius: 50%;
+    background: white;
+    content: "";
+    transition: transform 0.2s ease;
+}
+
+
+.knowledge-base-switch input:checked + .switch-track {
+    background: var(--intern-red);
+}
+
+
+.knowledge-base-switch input:checked + .switch-track::after {
+    transform: translateX(14px);
+}
+
+
+.knowledge-base-panel {
+    padding: 14px 28px;
+    border-bottom: 1px solid var(--border);
+    background: #fff7f7;
+}
+
+
+.knowledge-base-panel-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+
+.knowledge-base-panel-header span,
+.knowledge-base-status {
+    color: var(--muted-text);
+    font-size: 12px;
+}
+
+
+.knowledge-base-status.error {
+    color: var(--intern-red-dark);
+    font-weight: 500;
+}
+
+
+.knowledge-base-error-path {
+    color: var(--text);
+    font-weight: 400;
+}
+
+
+.knowledge-base-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+
+.knowledge-base-form label {
+    color: var(--text);
+    font-size: 13px;
+}
+
+
+.knowledge-base-form input {
+    min-width: 0;
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font: inherit;
+    font-size: 12px;
+}
+
+
+.knowledge-base-form button,
+.knowledge-base-source button {
+    position: relative;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 6px;
+    background: #9ca3af;
+    color: white;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+
+.knowledge-base-form button.path-ready {
+    background: var(--intern-red);
+}
+
+
+.knowledge-base-form button.path-ready:hover {
+    background: var(--intern-red-dark);
+}
+
+
+.knowledge-base-form button:disabled {
+    cursor: wait;
+    opacity: 0.6;
+}
+
+
+.knowledge-base-form button.is-clicked {
+    opacity: 1;
+    animation: addPathClick 0.45s ease-out;
+}
+
+
+@keyframes addPathClick {
+    0% {
+        box-shadow: 0 0 0 0 rgba(185, 28, 28, 0.55);
+        transform: scale(1);
+    }
+
+    45% {
+        box-shadow: 0 0 0 7px rgba(185, 28, 28, 0.18);
+        transform: scale(0.94);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(185, 28, 28, 0);
+        transform: scale(1);
+    }
+}
+
+
+.knowledge-base-sources {
+    display: grid;
+    gap: 0;
+    margin-top: 10px;
+}
+
+
+.knowledge-base-sources-label {
+    margin-top: 12px;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+
+.knowledge-base-source {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0;
+    line-height: 1.25;
+    color: var(--text);
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+
+.knowledge-base-source button {
+    padding: 4px 8px;
+    background: transparent;
+    color: var(--intern-red-dark);
+}
+
+
+.knowledge-base-status {
+    min-height: 18px;
+    margin-top: 8px;
+    overflow-wrap: anywhere;
+}
+
+
+/* ---------------------------------------------------------
    Chat area
 --------------------------------------------------------- */
 
@@ -223,7 +458,7 @@ body {
     width: fit-content;
     max-width: 75%;
 
-    padding: 9px 13px;
+    padding: 5px 13px;
 
     border-radius: 8px;
 
@@ -390,6 +625,7 @@ body {
 --------------------------------------------------------- */
 
 .input-area button {
+    position: relative;
     width: 80px;
     height: 40px;
 
@@ -419,7 +655,8 @@ body {
     transition:
         background 0.2s ease,
         transform 0.1s ease,
-        box-shadow 0.2s ease;
+        box-shadow 0.2s ease,
+        opacity 0.2s ease;
 }
 
 
@@ -427,7 +664,9 @@ body {
     background: var(--blue-dark);
 
     box-shadow:
-        0 3px 8px rgba(37, 99, 235, 0.25);
+        0 4px 12px rgba(37, 99, 235, 0.30);
+
+    transform: translateY(-1px);
 }
 
 
@@ -457,8 +696,33 @@ body {
 }
 
 
+.input-area button.is-busy {
+    opacity: 1;
+    overflow: hidden;
+    background: linear-gradient(
+        110deg,
+        #555555 35%,
+        #bbbbbb 50%,
+        #555555 65%
+    );
+    background-size: 200% 100%;
+    animation: sendButtonShimmer 1s linear infinite;
+}
+
+
+@keyframes sendButtonShimmer {
+    from {
+        background-position: 100% 0;
+    }
+
+    to {
+        background-position: -100% 0;
+    }
+}
+
+
 .send-icon {
-    font-size: 13px;
+    font-size: 14px;
 }
 
 
@@ -517,6 +781,8 @@ body {
         padding: 14px 16px;
 
         gap: 12px;
+
+        flex-wrap: wrap;
     }
 
 
@@ -532,6 +798,50 @@ body {
 
     .model-selector select {
         min-width: 120px;
+    }
+
+
+    .knowledge-base-switch {
+        margin-left: 0;
+    }
+
+
+    .header-controls {
+        align-items: flex-start;
+    }
+
+
+    .knowledge-base-panel {
+        padding: 12px 16px;
+    }
+
+
+    .knowledge-base-panel-header {
+        display: block;
+    }
+
+
+    .knowledge-base-panel-header span {
+        display: block;
+        margin-top: 4px;
+    }
+
+
+    .knowledge-base-form {
+        width: 100%;
+        align-items: stretch;
+        flex-wrap: wrap;
+    }
+
+
+    .knowledge-base-form input {
+        width: auto;
+        flex-basis: 100%;
+    }
+
+
+    .knowledge-base-status {
+        margin-top: 8px;
     }
 
 

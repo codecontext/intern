@@ -63,3 +63,11 @@ def test_invalid_utf8_raises_ingestion_error(tmp_path: Path) -> None:
 
     with pytest.raises(IngestionError, match="valid UTF-8"):
         DocumentIngestionService().ingest_directory(tmp_path)
+
+
+def test_unsupported_direct_file_raises_ingestion_error(tmp_path: Path) -> None:
+    unsupported_document = tmp_path / "document.pdf"
+    unsupported_document.write_bytes(b"pdf")
+
+    with pytest.raises(IngestionError, match="Unsupported document type"):
+        DocumentIngestionService().ingest_path(unsupported_document)

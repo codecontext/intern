@@ -55,6 +55,23 @@ class DocumentIngestionService:
 
         return documents
 
+    def ingest_path(self, path: Path) -> list[Document]:
+        """Read one supported file or all supported files in a directory."""
+        source_path = path.expanduser().resolve()
+
+        if source_path.is_dir():
+            return self.ingest_directory(source_path)
+
+        if not source_path.exists():
+            raise IngestionError(f"Source path does not exist: {path}")
+
+        if source_path.suffix.lower() not in self.SUPPORTED_EXTENSIONS:
+            raise IngestionError(
+                f"Unsupported document type: {source_path.name}"
+            )
+
+        return [self._read_document(source_path.parent, source_path)]
+
     def _read_document(self, source_directory: Path, path: Path) -> Document:
         try:
             content = path.read_text(encoding="utf-8")

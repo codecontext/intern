@@ -24,19 +24,58 @@
             </div>
         </div>
 
-        <div class="model-selector">
+        <div class="header-controls">
+            <div class="model-selector">
 
-            <label for="model">
-                Model
+                <label for="model">
+                    Model
+                </label>
+
+                <select id="model">
+                    <option value="">Loading...</option>
+                </select>
+
+            </div>
+
+            <label class="knowledge-base-switch">
+                <span>Knowledge Sources</span>
+                <input id="knowledge-base-toggle" type="checkbox">
+                <span class="switch-track" aria-hidden="true"></span>
+                <span id="knowledge-base-toggle-label">OFF</span>
             </label>
-
-            <select id="model">
-                <option value="">Loading...</option>
-            </select>
-
         </div>
 
     </header>
+
+    <div id="knowledge-base-panel" class="knowledge-base-panel" hidden>
+        <div class="knowledge-base-panel-header">
+            <strong>Knowledge Base</strong>
+            <span>Add local files or folders to this session.</span>
+        </div>
+        <form id="knowledge-base-form" class="knowledge-base-form">
+            <label for="knowledge-base-path">Path</label>
+            <input
+                id="knowledge-base-path"
+                type="text"
+                placeholder="/path/to/file-or-folder"
+                autocomplete="off"
+            >
+            <button id="knowledge-base-add" type="submit">Add path</button>
+        </form>
+        <div
+            id="knowledge-base-sources-label"
+            class="knowledge-base-sources-label"
+            hidden
+        >Added Paths</div>
+        <div
+            id="knowledge-base-sources"
+            class="knowledge-base-sources"
+            hidden
+        ></div>
+        <div id="knowledge-base-status" class="knowledge-base-status" role="status">
+            No sources added
+        </div>
+    </div>
 
 
     <!-- Chat -->

@@ -15,6 +15,9 @@ from intern.application.conversation import (
     ConversationService,
 )
 from intern.application.repository import InMemoryConversationRepository
+from intern.ingestion.service import IngestionError
+from intern.knowledge_base.models import KnowledgeBase
+from intern.knowledge_base.service import KnowledgeBaseService
 from intern.llm.ollama import OllamaLLM
 
 WEB_DIR = Path(__file__).resolve().parents[1] / "web"
@@ -55,6 +58,42 @@ class AssistantResponse(BaseModel):
     response: str
 
 
+class KnowledgeBaseCreateRequest(BaseModel):
+    source_paths: list[str] = Field(min_length=1)
+
+    @field_validator("source_paths")
+    @classmethod
+    def reject_empty_paths(cls, value: list[str]) -> list[str]:
+        paths = [path.strip() for path in value]
+
+        if not paths or any(not path for path in paths):
+            raise ValueError("source paths must not be empty")
+
+        return paths
+
+
+class KnowledgeBaseResponse(BaseModel):
+    knowledge_base_id: UUID
+    source_paths: list[str]
+    document_count: int
+    created_at: datetime
+
+
+class KnowledgeBaseValidationResponse(BaseModel):
+    valid: bool
+
+
+def serialize_knowledge_base(
+    knowledge_base: KnowledgeBase,
+) -> KnowledgeBaseResponse:
+    return KnowledgeBaseResponse(
+        knowledge_base_id=knowledge_base.knowledge_base_id,
+        source_paths=[str(path) for path in knowledge_base.source_paths],
+        document_count=len(knowledge_base.documents),
+        created_at=knowledge_base.created_at,
+    )
+
+
 def serialize_conversation(conversation: Conversation) -> ConversationResponse:
     return ConversationResponse(
         conversation_id=conversation.conversation_id,
@@ -70,6 +109,7 @@ def serialize_conversation(conversation: Conversation) -> ConversationResponse:
 def create_app(
     configured_chat_service: ChatService | None = None,
     configured_conversation_service: ConversationService | None = None,
+    configured_knowledge_base_service: KnowledgeBaseService | None = None,
 ) -> FastAPI:
     application = FastAPI(
         title="Intern",
@@ -91,6 +131,9 @@ def create_app(
             app_chat_service,
         )
     )
+    app_knowledge_base_service = (
+        configured_knowledge_base_service or KnowledgeBaseService()
+    )
 
     @application.get("/")
     def index() -> FileResponse:
@@ -103,6 +146,55 @@ def create_app(
     @application.get("/api/models")
     def models() -> list[str]:
         return app_chat_service.list_models()
+
+    @application.get(
+        "/api/knowledge-bases",
+        response_model=list[KnowledgeBaseResponse],
+    )
+    def list_knowledge_bases() -> list[KnowledgeBaseResponse]:
+        return [
+            serialize_knowledge_base(knowledge_base)
+            for knowledge_base in app_knowledge_base_service.list()
+        ]
+
+    @application.post(
+        "/api/knowledge-bases/validate",
+        response_model=KnowledgeBaseValidationResponse,
+    )
+    def validate_knowledge_base_paths(
+        request: KnowledgeBaseCreateRequest,
+    ) -> KnowledgeBaseValidationResponse:
+        try:
+            app_knowledge_base_service.validate_paths(
+                [Path(path) for path in request.source_paths],
+            )
+        except (IngestionError, ValueError) as error:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(error),
+            ) from error
+
+        return KnowledgeBaseValidationResponse(valid=True)
+
+    @application.post(
+        "/api/knowledge-bases",
+        response_model=KnowledgeBaseResponse,
+        status_code=status.HTTP_201_CREATED,
+    )
+    def create_knowledge_base(
+        request: KnowledgeBaseCreateRequest,
+    ) -> KnowledgeBaseResponse:
+        try:
+            knowledge_base = app_knowledge_base_service.create(
+                [Path(path) for path in request.source_paths],
+            )
+        except IngestionError as error:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(error),
+            ) from error
+
+        return serialize_knowledge_base(knowledge_base)
 
     @application.post(
         "/api/conversations",
