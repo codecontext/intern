@@ -10,8 +10,12 @@ from intern.application.conversation import (
     ConversationService,
     Message,
 )
+from intern.embeddings.base import EmbeddingProvider
+from intern.embeddings.service import EmbeddingService
+from intern.knowledge_base.service import KnowledgeBaseService
 from intern.application.repository import InMemoryConversationRepository
 from intern.llm.base import LLM
+from intern.vectorstore.in_memory import InMemoryVectorStore
 
 
 class FakeLLM(LLM):
@@ -28,6 +32,11 @@ class FakeLLM(LLM):
 
         self.calls.append((model, messages))
         return f"reply to: {messages[-1]['content']}"
+
+
+class FakeEmbeddingProvider(EmbeddingProvider):
+    def embed(self, model: str, texts: list[str]) -> list[list[float]]:
+        return [[1.0, 0.0] for _ in texts]
 
 
 @pytest.fixture
@@ -168,3 +177,33 @@ def test_api_errors_do_not_require_ollama() -> None:
     )
     assert failed_response.status_code == 502
     assert "failed to generate" in failed_response.json()["detail"]
+
+
+def test_knowledge_base_context_is_sent_to_chat_service(
+    tmp_path,
+) -> None:
+    source = tmp_path / "notes.md"
+    source.write_text("The project codename is Aurora.", encoding="utf-8")
+    knowledge_base_service = KnowledgeBaseService(
+        embedding_service=EmbeddingService(FakeEmbeddingProvider()),
+        embedding_model="fake-embedding-model",
+        vector_store_factory=InMemoryVectorStore,
+    )
+    knowledge_base_service.create([source])
+    fake_llm = FakeLLM()
+    conversation_service = ConversationService(
+        InMemoryConversationRepository(),
+        ChatService(fake_llm),
+        context_provider=knowledge_base_service,
+    )
+    conversation = conversation_service.create_conversation()
+
+    conversation_service.add_user_message_and_respond(
+        conversation.conversation_id,
+        model="fake-model",
+        content="What is the project codename?",
+    )
+
+    context_message = fake_llm.calls[-1][1][0]
+    assert context_message["role"] == "system"
+    assert "The project codename is Aurora." in context_message["content"]

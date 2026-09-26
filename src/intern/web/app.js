@@ -16,6 +16,18 @@ let conversationId = null;
 let loadedKnowledgeBasePaths = [];
 
 
+async function responseError(response, fallback) {
+    const body = await response.text();
+
+    try {
+        const error = JSON.parse(body);
+        return error.detail || fallback;
+    } catch {
+        return body || fallback;
+    }
+}
+
+
 /* ---------------------------------------------------------
    Knowledge bases
 --------------------------------------------------------- */
@@ -120,8 +132,9 @@ async function addKnowledgeBasePath() {
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || "The path could not be read");
+            throw new Error(
+                await responseError(response, "The path could not be read")
+            );
         }
 
         const sourcePaths = [...loadedKnowledgeBasePaths, sourcePath];
@@ -136,8 +149,12 @@ async function addKnowledgeBasePath() {
         });
 
         if (!loadResponse.ok) {
-            const error = await loadResponse.json();
-            throw new Error(error.detail || "Failed to add knowledge source");
+            throw new Error(
+                await responseError(
+                    loadResponse,
+                    "Failed to add knowledge source",
+                )
+            );
         }
 
         const knowledgeBase = await loadResponse.json();

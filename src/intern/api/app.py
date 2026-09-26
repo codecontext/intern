@@ -15,10 +15,17 @@ from intern.application.conversation import (
     ConversationService,
 )
 from intern.application.repository import InMemoryConversationRepository
+from intern.config import EMBEDDING_MODEL
+from intern.embeddings.ollama import OllamaEmbeddingProvider
+from intern.embeddings.service import EmbeddingService
 from intern.ingestion.service import IngestionError
 from intern.knowledge_base.models import KnowledgeBase
-from intern.knowledge_base.service import KnowledgeBaseService
+from intern.knowledge_base.service import (
+    KnowledgeBaseIndexingError,
+    KnowledgeBaseService,
+)
 from intern.llm.ollama import OllamaLLM
+from intern.vectorstore.in_memory import InMemoryVectorStore
 
 WEB_DIR = Path(__file__).resolve().parents[1] / "web"
 
@@ -124,15 +131,21 @@ def create_app(
     )
 
     app_chat_service = configured_chat_service or ChatService(llm=OllamaLLM())
+    app_knowledge_base_service = (
+        configured_knowledge_base_service
+        or KnowledgeBaseService(
+            embedding_service=EmbeddingService(OllamaEmbeddingProvider()),
+            embedding_model=EMBEDDING_MODEL,
+            vector_store_factory=InMemoryVectorStore,
+        )
+    )
     app_conversation_service = (
         configured_conversation_service
         or ConversationService(
             InMemoryConversationRepository(),
             app_chat_service,
+            context_provider=app_knowledge_base_service,
         )
-    )
-    app_knowledge_base_service = (
-        configured_knowledge_base_service or KnowledgeBaseService()
     )
 
     @application.get("/")
@@ -191,6 +204,11 @@ def create_app(
         except IngestionError as error:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(error),
+            ) from error
+        except KnowledgeBaseIndexingError as error:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
                 detail=str(error),
             ) from error
 

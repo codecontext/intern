@@ -4,6 +4,7 @@ from typing import Literal
 from uuid import UUID, uuid4
 
 from intern.application.chat import ChatService
+from intern.application.context import ContextProvider
 from intern.application.repository import ConversationRepository
 
 
@@ -36,9 +37,11 @@ class ConversationService:
         self,
         repository: ConversationRepository,
         chat_service: ChatService,
+        context_provider: ContextProvider | None = None,
     ):
         self._repository = repository
         self._chat_service = chat_service
+        self._context_provider = context_provider
 
     def create_conversation(self) -> Conversation:
         conversation = Conversation(conversation_id=uuid4())
@@ -77,12 +80,30 @@ class ConversationService:
             conversation_id,
             Message(role="user", content=content),
         )
+        messages = [
+            {"role": message.role, "content": message.content}
+            for message in self.get_messages(conversation_id)
+        ]
+        context = (
+            self._context_provider.context_for(content)
+            if self._context_provider is not None
+            else ""
+        )
+        if context:
+            messages.insert(
+                0,
+                {
+                    "role": "system",
+                    "content": (
+                        "Use the following Knowledge Base context when it is "
+                        "relevant.\n\n" + context
+                    ),
+                },
+            )
+
         response = self._chat_service.chat(
             model=model,
-            messages=[
-                {"role": message.role, "content": message.content}
-                for message in self.get_messages(conversation_id)
-            ],
+            messages=messages,
         )
         self.add_message(
             conversation_id,

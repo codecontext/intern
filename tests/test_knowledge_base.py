@@ -5,7 +5,10 @@ from fastapi.testclient import TestClient
 
 from intern.api.app import create_app
 from intern.application.chat import ChatService
-from intern.knowledge_base.service import KnowledgeBaseService
+from intern.knowledge_base.service import (
+    KnowledgeBaseIndexingError,
+    KnowledgeBaseService,
+)
 from intern.llm.base import LLM
 
 
@@ -47,6 +50,7 @@ def test_adding_a_source_replaces_the_active_snapshot(tmp_path: Path) -> None:
 def test_knowledge_base_api_lists_and_creates(tmp_path: Path) -> None:
     application = create_app(
         configured_chat_service=ChatService(FakeLLM()),
+        configured_knowledge_base_service=KnowledgeBaseService(),
     )
     client = TestClient(application)
     (tmp_path / "notes.txt").write_text("hello", encoding="utf-8")
@@ -70,6 +74,7 @@ def test_knowledge_base_api_lists_and_creates(tmp_path: Path) -> None:
 def test_knowledge_base_api_rejects_invalid_directory(tmp_path: Path) -> None:
     application = create_app(
         configured_chat_service=ChatService(FakeLLM()),
+        configured_knowledge_base_service=KnowledgeBaseService(),
     )
     client = TestClient(application)
 
@@ -87,6 +92,7 @@ def test_knowledge_base_api_validates_paths_before_loading(
 ) -> None:
     application = create_app(
         configured_chat_service=ChatService(FakeLLM()),
+        configured_knowledge_base_service=KnowledgeBaseService(),
     )
     client = TestClient(application)
     valid_path = tmp_path / "notes.md"
@@ -110,6 +116,7 @@ def test_knowledge_base_api_validates_paths_before_loading(
 def test_knowledge_base_api_rejects_empty_path() -> None:
     application = create_app(
         configured_chat_service=ChatService(FakeLLM()),
+        configured_knowledge_base_service=KnowledgeBaseService(),
     )
     client = TestClient(application)
 
@@ -119,3 +126,29 @@ def test_knowledge_base_api_rejects_empty_path() -> None:
     )
 
     assert response.status_code == 422
+
+
+def test_knowledge_base_api_returns_json_when_indexing_fails(
+    tmp_path: Path,
+) -> None:
+    class FailingKnowledgeBaseService(KnowledgeBaseService):
+        def _build_index(self, documents) -> None:
+            raise RuntimeError("embedding provider unavailable")
+
+    application = create_app(
+        configured_chat_service=ChatService(FakeLLM()),
+        configured_knowledge_base_service=FailingKnowledgeBaseService(),
+    )
+    client = TestClient(application)
+    (tmp_path / "notes.txt").write_text("hello", encoding="utf-8")
+
+    response = client.post(
+        "/api/knowledge-bases",
+        json={"source_paths": [str(tmp_path)]},
+    )
+
+    assert response.status_code == 502
+    assert response.json()["detail"] == (
+        "Knowledge Base indexing failed. Check the embedding model "
+        "and Ollama service."
+    )

@@ -11,3 +11,8 @@ DATA_DIR = Path(
 STORAGE_DIR = Path(
     os.getenv("INTERN_STORAGE_DIR", PROJECT_ROOT / "storage")
 )
+
+EMBEDDING_MODEL = os.getenv(
+    "INTERN_EMBEDDING_MODEL",
+    "nomic-embed-text",
+)
